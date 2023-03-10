@@ -161,6 +161,8 @@ env SOURCETRACKER_PATH='/workdir/tn337/Kraken/SourceTracker_Tutorial/sourcetrack
 Unfortunately, SourceTracker does not have a function to directly remove contaminants identified. So we will be using the R program Decontam to do this. Details can be found in the script ```decontam.R```
 
 
+<br /> 
+
 ## 9. Finally, quantify and calculate alpha and beta diversity of microbes using Phyloseq!
 
 The phyloseq package is a tool to import, store, analyze, and graphically display complex phylogenetic sequencing data that has already been clustered into Operational Taxonomic Units (OTUs). It is a wonderful program and there are detailed tutorials available on their [webpage](https://joey711.github.io/phyloseq/#:~:text=The%20phyloseq%20package%20is%20a,taxonomic%20assignment%20of%20the%20OTUs). 
