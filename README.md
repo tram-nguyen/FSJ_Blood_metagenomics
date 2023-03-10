@@ -110,6 +110,7 @@ To ensure that the microbes we are detecting are truly host-specific and not a p
 We will be using the program SourceTracker, which uses a Bayesian approach to predict the source of microbial communities in a set of input samples (i.e., the sink samples). We want to know the proportion of microbes that are likely from the HMP dataset and thus, likely human-associated and not bird-associated.
 
 In this study, we downloaded mWGS from relevant body sites (in our case: nasal, mouth, skin) from the Human Microbiome Project. 
+
 <img src="https://i.imgur.com/5gC5M2W.png" width=50% height=50%>
 
 More information about the HMP can be found here: https://www.hmpdacc.org/hmp/
