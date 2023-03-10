@@ -17,6 +17,7 @@ Briefly, we start with Illumina paired-end sequences. We first trim adapter sequ
 - [bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml#:~:text=Bowtie%202%20is%20an%20ultrafast,long%20(e.g.%20mammalian)%20genomes.) v2.4.5
 - [kneaddata](https://huttenhower.sph.harvard.edu/kneaddata/) v0.12.0
 - [Kraken2](https://ccb.jhu.edu/software/kraken2/) v2.1.0
+- [Bracken](https://ccb.jhu.edu/software/bracken/) v2.0
 
 # Step-by-step pipeline
 
@@ -50,10 +51,38 @@ Run ```kraken-build-commands.sh```
 
 
 ### 4. Run Kraken!
-Now that we've hopefully built our microbe/pathogen database, let's run Kraken to assign taxonomic labels to those remaining reads to quantify microbes within the host whole-blood samples.
+Now that we've hopefully built our microbe/pathogen database, let's run Kraken to assign taxonomic labels to those remaining reads to quantify microbes within the host whole-blood samples. Below is code to loop through our samples but this can also be parallelized as separate cluster runs. You will need your reads from the KneadData output and a text file containing your sample IDs.
 
-Kraken_pipeline_2022.sh) outputs: /fs/cbsuclarkfs1/storage/tn337/Kraken/kraken_results/2022/
-4. Run Braken (run_Bracken2022.sh) outputs:/fs/cbsuclarkfs1/storage/tn337/Kraken/Bracken/2022
-5. Plot a bunch of contamination/bracken QC and analyses on lm11 R.
+
+```
+source $HOME/miniconda3/bin/activate
+source activate kraken2 #navigate into kraken2 conda environment
+
+export PATH=/programs/bowtie2-2.4.5-linux-x86_64:$PATH
+DBNAME=/fs/cbsuclarkfs1/storage/tn337/Kraken/kraken_db_2021
+
+cd /workdir/tn337/Kraken/
+
+for number in $(seq 1 294);
+   do
+         mySample=`sed -n "${number}p" ./full_unique_sample_list_2022.txt | cut -f 1` #look through a list of samples
+         echo ${mySample}
+         kraken2 --db ${DBNAME} --output /kraken_results/2022/${mySample}_stdb.krkn \
+         --report /kraken_results/2022/${mySample}_stdb.rpt \
+         --paired /kneaddata2022/${mySample}_merged_1P_kneaddata_paired_1.fastq \
+         /kneaddata2022/${mySample}_merged_1P_kneaddata_paired_2.fastq
+   done
+```
+
+### 5. Run Bracken
+Because Kraken classifies reads to the best matching location in the taxonomic tree, but does not estimate abundances of species, we will now use Bracken to compute the abundance of species in DNA sequences from a metagenomics sample. You will once again need to build a Bracken database and use your Kraken outputs from the previous step.
+
+Run ```run_Bracken2022.sh```
+
+
+### 6. Do some QC and Visualize your results.
+This script is to plot a bunch of contamination/bracken QC and analyses in R.
+
+
 6. Begin Qiime2 protocol -- FIRST, kraken-biom (kraken2 reports to .biom table)
 
