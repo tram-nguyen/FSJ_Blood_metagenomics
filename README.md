@@ -20,8 +20,9 @@ Briefly, we start with Illumina paired-end sequences. We first trim adapter sequ
 - [Bracken](https://ccb.jhu.edu/software/bracken/) v2.0
 - [kraken-biom](https://github.com/smdabdoub/kraken-biom) v1.0
 - [SourceTracker](https://github.com/biota/sourcetracker2) v1.0.1
-- [phyloseq](https://joey711.github.io/phyloseq/) v
-- [Decontam](https://benjjneb.github.io/decontam/vignettes/decontam_intro.html) 
+- [phyloseq](https://joey711.github.io/phyloseq/) v1.34.0
+- [Decontam](https://benjjneb.github.io/decontam/vignettes/decontam_intro.html) v1.10.0
+- [QIIME2](https://qiime2.org/) v2021.2
 
 # Step-by-step pipeline
 
@@ -61,7 +62,7 @@ Run ```kraken-build-commands.sh```
 
 <br />
 
-## 4. Run Kraken!
+## 4. Run Kraken
 Now that we've hopefully built our microbe/pathogen database, let's run Kraken to assign taxonomic labels to those remaining reads to quantify microbes within the host whole-blood samples. Below is code to loop through our samples but this can also be parallelized as separate cluster runs. You will need your reads from the KneadData output and a text file containing your sample IDs.
 
 
@@ -160,6 +161,40 @@ env SOURCETRACKER_PATH='/workdir/tn337/Kraken/SourceTracker_Tutorial/sourcetrack
 Unfortunately, SourceTracker does not have a function to directly remove contaminants identified. So we will be using the R program Decontam to do this. Details can be found in the script ```decontam.R```
 
 
-## 9. Finally, quantify and calculate alpha and beta diversity of microbes.
+## 9. Finally, quantify and calculate alpha and beta diversity of microbes using Phyloseq!
+
+The phyloseq package is a tool to import, store, analyze, and graphically display complex phylogenetic sequencing data that has already been clustered into Operational Taxonomic Units (OTUs). It is a wonderful program and there are detailed tutorials available on their [webpage](https://joey711.github.io/phyloseq/#:~:text=The%20phyloseq%20package%20is%20a,taxonomic%20assignment%20of%20the%20OTUs). 
+
+<br /> 
+
+The script ```explore_diversity_alpha_beta_phyloseq.R``` was used to explore microbe composition and diversity. The follow plots are examples from this script.
+<br /> 
+
+<img src="https://i.imgur.com/IPAugRY.png" width=70% height=70%>
+
+Plot the abundance of Genera across all 10 different sampling groups.
+<br /> 
+<br /> 
+
+<img src="https://i.imgur.com/ZbDfPc5.png" width=70% height=70%>
+Visualize the correlation between host genetic diversity (heterozygosity) and degree of inbreeding with microbe diversity.
+
+
+<br /> 
+<br /> 
+
+The script ```Phyloseq_Ordination.R``` was used to visualize the separation of our samples against HMP data in PCOA space. We can see that we've done a good job removing potential human-associated contaminations since the samples do not overlap.
+
+<img src="https://i.imgur.com/ZN3Zsvh.png" width=70% height=70%>
+
+<br /> 
+
+
+
+
+
+
+
+
 
 
