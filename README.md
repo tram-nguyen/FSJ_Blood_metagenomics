@@ -55,9 +55,9 @@ Run ```SLURM_kneaddata.sh```
 <br />
 
 ## 3. Build Kraken database
-Because Kraken database downloads files from several sources such as NCBI, if any changes are made to these files on their end, the build will have trouble completing. Thus, this portion of the workflow will take some time to troubleshoot and the script provided serves as more of a documentation of all the different troubleshooting steps I've had to try recently. I have included several github issue pages for common problems, but this step will constant need to be updated and tweaked. The latest version that successfully completed was August 2022 for this project.
+Because Kraken builds its standard database by downloading files from several sources such as NCBI, if any changes are made to these files on the repository's end, the build will have trouble completing. Thus, this portion of the workflow will take some time to troubleshoot and the script provided serves as more of a documentation of all the different troubleshooting steps I've had to try (recently as of Aug 2022). I have included several github issue pages for common problems in the script, but this step will constantly need to be updated and tweaked. The latest version that successfully completed was August 2022 for this project.
 
-Run ```kraken-build-commands.sh```
+See ```kraken-build-commands.sh``` for details.
 
 
 <br />
@@ -90,7 +90,7 @@ for number in $(seq 1 294);
 <br />
 
 ## 5. Run Bracken
-Because Kraken classifies reads to the best matching location in the taxonomic tree, but does not estimate abundances of species, we will now use Bracken to compute the abundance of species in DNA sequences from a metagenomics sample. You will once again need to build a Bracken database and use your Kraken outputs from the previous step.
+Kraken classifies reads to the best matching location in the taxonomic tree, but does not estimate abundances of species. We will now use Bracken to compute the abundance of species in DNA sequences from a metagenomics sample. You will once again need to build a Bracken database and use your Kraken outputs from the previous step.
 
 Run ```run_Bracken2022.sh```
 
@@ -98,25 +98,23 @@ Run ```run_Bracken2022.sh```
 <br />
 
 ## 6. Exploratory Visualization and QC on Bracken outputs
-This script provides code for creating several exploratory plots from Bracken results. For example, this code can visualize the 50 most prevalent species within your data. It can also be used to explore potential lab/handling contamination by including metadata from collectors and sequencing batches. These scripts are explorative and can be a start to doing some initial QC and analyses in R. Analyses are in ```plot_bracken_2022.R```
-
+This script provides code for creating several exploratory plots from Bracken results. For example, this code can visualize the 50 most prevalent species within your data. It can also be used to explore potential laboratory or sampling handling contamination by including metadata about collectors, sequencing batches, and sample collection dates. These scripts are explorative and can be a starting point for doing some initial QC and analyses in R. Analyses are in ```plot_bracken_2022.R```
 
 <br />
 
 ## 7. Run SourceTracker to identify more potential sources of lab/handling contamination
-To ensure that the microbes we are detecting are truly host-specific and not a part of laboratory preparation or sampling handling, we will download metagenomes from the Human Microbiome Project to serve as a negative control for our dataset. Because our samples were opportunistically sampled, we could not produce a reliable negative blank control. Therefore, this strategy may also be helpful for trickier samples where a control was not possible.
-
+To ensure that the microbes we are detecting are truly host-specific and not a part of laboratory preparation or sampling handling, we will download metagenomes from the Human Microbiome Project to serve as a negative control for our dataset. Because our samples were opportunistically sampled, we unfortunately could not produce a reliable negative blank control. Therefore, this strategy may also be helpful for trickier samples where a control was not possible.
 
 We will be using the program SourceTracker, which uses a Bayesian approach to predict the source of microbial communities in a set of input samples (i.e., the sink samples). We want to know the proportion of microbes that are likely from the HMP dataset and thus, likely human-associated and not bird-associated.
 
-In this study, we downloaded mWGS from relevant body sites (in our case: nasal, mouth, skin) from the Human Microbiome Project. 
+In this study, we downloaded mWGS from relevant body sites (in our case: nasal, oral, skin) from the Human Microbiome Project. 
 
 <img src="https://i.imgur.com/5gC5M2W.png" width=50% height=50%>
 
 More information about the HMP can be found here: https://www.hmpdacc.org/hmp/
 
 <br />
-Now we combine our HMP sequences with the kraken outputs from the remaining reads in our host to create one complete .biom table.
+Now, we combine our HMP sequences with the kraken outputs from the remaining reads in our host to create one complete .biom table.
 
 ```source $HOME/miniconda3/bin/activate
 conda activate kraken2
@@ -124,7 +122,7 @@ kraken-biom *.rpt #default is "table.biom"
 mv table.biom FSJ_HMP_Dec2022.biom #change the default name to something more informative
 ```
 
-Create a map file which contains metadata for our samples and specifies HMP data as a potential "source" to investigate proportion of contamination. Below is the beginning of our map file as an example.
+Now we need to create a map file which contains metadata for our samples and specifies HMP data as a potential "source" to investigate the proportion of contamination. Below is the beginning of our map file as an example.
 
 ```
 #SampleID	SourceSink	Env
@@ -166,7 +164,7 @@ Unfortunately, SourceTracker does not have a function to directly remove contami
 
 ## 9. Finally, quantify and calculate alpha and beta diversity of microbes using Phyloseq!
 
-The phyloseq package is a tool to import, store, analyze, and graphically display complex phylogenetic sequencing data that has already been clustered into Operational Taxonomic Units (OTUs). It is a wonderful program and there are detailed tutorials available on their [webpage](https://joey711.github.io/phyloseq/#:~:text=The%20phyloseq%20package%20is%20a,taxonomic%20assignment%20of%20the%20OTUs). 
+The phyloseq package is a tool to import, store, analyze, and graphically display complex phylogenetic sequencing data that has already been clustered into Operational Taxonomic Units (OTUs). It is super useful program and there are wonderful tutorials available on their [webpage](https://joey711.github.io/phyloseq/#:~:text=The%20phyloseq%20package%20is%20a,taxonomic%20assignment%20of%20the%20OTUs). 
 
 <br /> 
 
@@ -175,18 +173,18 @@ The script ```explore_diversity_alpha_beta_phyloseq.R``` was used to explore mic
 
 <img src="https://i.imgur.com/IPAugRY.png" width=70% height=70%>
 
-Plot the abundance of Genera across all 10 different sampling groups.
+Plot of the abundance of Genera across all 10 different sampling groups.
 <br /> 
 <br /> 
 
 <img src="https://i.imgur.com/ZbDfPc5.png" width=70% height=70%>
-Visualize the correlation between host genetic diversity (heterozygosity) and degree of inbreeding with microbe diversity.
+Visualizing the correlation between host genetic diversity (heterozygosity) and degree of inbreeding with microbe diversity.
 
 
 <br /> 
 <br /> 
 
-The script ```Phyloseq_Ordination.R``` was used to visualize the separation of our samples against HMP data in PCOA space. We can see that we've done a good job removing potential human-associated contaminations since the samples do not overlap.
+The script ```Phyloseq_Ordination.R``` was used to visualize the ordination of our samples against HMP data in PCOA space. We can see that we've done a good job removing potential human-associated contaminations since the samples do not overlap.
 
 <img src="https://i.imgur.com/ZN3Zsvh.png" width=70% height=70%>
 
