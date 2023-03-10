@@ -1,5 +1,5 @@
 # FSJ_Blood_metagenomics
-Tram N. Nguyen
+Tram N. Nguyen, in collaboration with Thomas Ryan.
 <br />
 Updated: Dec 15, 2022
 <br />
@@ -186,9 +186,6 @@ Visualize the correlation between host genetic diversity (heterozygosity) and de
 The script ```Phyloseq_Ordination.R``` was used to visualize the separation of our samples against HMP data in PCOA space. We can see that we've done a good job removing potential human-associated contaminations since the samples do not overlap.
 
 <img src="https://i.imgur.com/ZN3Zsvh.png" width=70% height=70%>
-
-<br /> 
-
 
 
 
