@@ -18,13 +18,14 @@ Briefly, we start with Illumina paired-end sequences. We first trim adapter sequ
 - [kneaddata](https://huttenhower.sph.harvard.edu/kneaddata/) v0.12.0
 - [Kraken2](https://ccb.jhu.edu/software/kraken2/) v2.1.0
 - [Bracken](https://ccb.jhu.edu/software/bracken/) v2.0
+- [kraken-biom](https://github.com/smdabdoub/kraken-biom) v1.0
 - [SourceTracker](https://github.com/biota/sourcetracker2) v1.0.1
 - [phyloseq](https://joey711.github.io/phyloseq/) v
 - [Decontam](https://benjjneb.github.io/decontam/vignettes/decontam_intro.html) 
 
 # Step-by-step pipeline
 
-### 1. Run Trimmomatic and apply read quality filters. 
+## 1. Run Trimmomatic and apply read quality filters. 
 This is executed through a SLURM scheduler, with each job as one sample. 
 
 Required inputs:
@@ -37,8 +38,7 @@ Run ```SLURM_trimmomatic.sh```
 
 <br />
 
-
-### 2. Run Kneaddata. 
+## 2. Run Kneaddata. 
 We will align our reads to our host reference genome and discard these, keeping only the remaining reads. 
 
 We first need to build our reference database.
@@ -53,14 +53,15 @@ Run ```SLURM_kneaddata.sh```
 
 <br />
 
-### 3. Build Kraken database
+## 3. Build Kraken database
 Because Kraken database downloads files from several sources such as NCBI, if any changes are made to these files on their end, the build will have trouble completing. Thus, this portion of the workflow will take some time to troubleshoot and the script provided serves as more of a documentation of all the different troubleshooting steps I've had to try recently. I have included several github issue pages for common problems, but this step will constant need to be updated and tweaked. The latest version that successfully completed was August 2022 for this project.
 
 Run ```kraken-build-commands.sh```
 
+
 <br />
 
-### 4. Run Kraken!
+## 4. Run Kraken!
 Now that we've hopefully built our microbe/pathogen database, let's run Kraken to assign taxonomic labels to those remaining reads to quantify microbes within the host whole-blood samples. Below is code to loop through our samples but this can also be parallelized as separate cluster runs. You will need your reads from the KneadData output and a text file containing your sample IDs.
 
 
@@ -84,26 +85,81 @@ for number in $(seq 1 294);
    done
 ```
 
+
 <br />
 
-### 5. Run Bracken
+## 5. Run Bracken
 Because Kraken classifies reads to the best matching location in the taxonomic tree, but does not estimate abundances of species, we will now use Bracken to compute the abundance of species in DNA sequences from a metagenomics sample. You will once again need to build a Bracken database and use your Kraken outputs from the previous step.
 
 Run ```run_Bracken2022.sh```
 
+
 <br />
 
-### 6. Exploratory Visualization and QC on Bracken outputs
+## 6. Exploratory Visualization and QC on Bracken outputs
 This script provides code for creating several exploratory plots from Bracken results. For example, this code can visualize the 50 most prevalent species within your data. It can also be used to explore potential lab/handling contamination by including metadata from collectors and sequencing batches. These scripts are explorative and can be a start to doing some initial QC and analyses in R. Analyses are in ```plot_bracken_2022.R```
 
+
 <br />
 
-### 7. Run SourceTracker to identify more potential sources of lab/handling contamination
-To ensure that the microbes we are detecting are truly host-specific and not a part of laboratory preparation or sampling handling, we will download metagenomes from the Human Microbiome Project to serve as a negative control for our dataset. Because these samples were opportunistically sampled, we could not produce a reliable negative blank control. Therefore, this strategy may also be helpful for trickier samples where a control was not possible.\
+## 7. Run SourceTracker to identify more potential sources of lab/handling contamination
+To ensure that the microbes we are detecting are truly host-specific and not a part of laboratory preparation or sampling handling, we will download metagenomes from the Human Microbiome Project to serve as a negative control for our dataset. Because our samples were opportunistically sampled, we could not produce a reliable negative blank control. Therefore, this strategy may also be helpful for trickier samples where a control was not possible.
 
-We will be using the program SourceTracker, which uses Bayesian approach to predict the source of microbial communities in a set of input samples (i.e., the sink samples). We want to know the proportion of microbes that are likely from the HMP dataset and thus, likely human-associated and not bird-associated.
 
-In this study, we download mWGS from relevant body sites (in our case: nasal, mouth, skin) from the Human Microbiome Project.
-![HMP logo](https://images.squarespace-cdn.com/content/538e5c3ce4b02add9dca1fd5/1410527133814-0BSTCQ4YHQ9F9O1TNOMN/?content-type=image%2Fpng)
+We will be using the program SourceTracker, which uses a Bayesian approach to predict the source of microbial communities in a set of input samples (i.e., the sink samples). We want to know the proportion of microbes that are likely from the HMP dataset and thus, likely human-associated and not bird-associated.
+
+In this study, we downloaded mWGS from relevant body sites (in our case: nasal, mouth, skin) from the Human Microbiome Project. 
+<img src="https://i.imgur.com/5gC5M2W.png" width=50% height=50%>
+
+More information about the HMP can be found here: https://www.hmpdacc.org/hmp/
+
+<br />
+Now we combine our HMP sequences with the kraken outputs from the remaining reads in our host to create one complete .biom table.
+
+```source $HOME/miniconda3/bin/activate
+conda activate kraken2
+kraken-biom *.rpt #default is "table.biom"
+mv table.biom FSJ_HMP_Dec2022.biom #change the default name to something more informative
+```
+
+Create a map file which contains metadata for our samples and specifies HMP data as a potential "source" to investigate proportion of contamination. Below is the beginning of our map file as an example.
+
+```
+#SampleID	SourceSink	Env
+SRS011105	source	HMP_nasal
+SRS011132	source	HMP_nasal
+SRS011263	source	HMP_nasal
+SRS011397	source	HMP_nasal
+SRS012291	source	HMP_nasal
+SRS018612	source	HMP_oral
+SRS018661	source	HMP_oral
+SRS018683	source	HMP_oral
+SRS018742	source	HMP_oral
+SRS018774	source	HMP_oral
+ABS518_stdb	sink	FSJ_host
+ABS639_stdb	sink	FSJ_host
+ABS602_stdb	sink	FSJ_host
+ABS643_stdb	sink	FSJ_host
+```
+
+Now run SourceTracker 
+
+```
+biom convert -i table.txt -o table.from_txt_json.biom --table-type="OTU table" --to-json #we need to convert our .biom table
+# http://biom-format.org/documentation/biom_conversion.html figure out which conversion you want
+
+## Now run sourcetracker
+SOURCETRACKER_PATH="/workdir/tn337/Kraken/SourceTracker_Tutorial/sourcetracker-1.0.1"
+
+env SOURCETRACKER_PATH='/workdir/tn337/Kraken/SourceTracker_Tutorial/sourcetracker-1.0.1' R --slave --vanilla --args -i filtered_otu_table.txt -m map.txt -o sourcetracker_out_test < $SOURCETRACKER_PATH/sourcetracker_for_qiime.r
+```
+
+<br />
+
+## 8. Remove contaminants using Decontam
+Unfortunately, SourceTracker does not have a function to directly remove contaminants identified. So we will be using the R program Decontam to do this. Details can be found in the script ```decontam.R```
+
+
+## 9. Finally, quantify and calculate alpha and beta diversity of microbes.
 
 
